@@ -73,7 +73,4 @@ Write a `main()` function that performs the following:
 6. Reverses the list.
 7. Checks if the list is a palindrome.
 8. Merges two lists.
-9. Uses additional functions (optional).
-
-
-
+9. Uses additional functions (optional)
