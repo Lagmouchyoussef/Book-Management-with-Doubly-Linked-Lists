@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// Structure pour représenter un livre
 typedef struct Livre {
     char titre[100];
     char auteur[100];
@@ -9,258 +8,325 @@ typedef struct Livre {
     struct Livre* suivant;
     struct Livre* precedent;
 } Livre;
-
-// 1. Créer un livre en demandant les informations à l'utilisateur
+// Fonction pour créer un nouveau livre
 Livre* creer_livre() {
     Livre* nouveau_livre = (Livre*)malloc(sizeof(Livre));
-    printf("Entrez le titre du livre : ");
-    scanf("%s", nouveau_livre->titre); 
-    printf("Entrez l'auteur : ");
-    scanf("%s", nouveau_livre->auteur); 
-    printf("Entrez l'année : ");
-    scanf("%d", &nouveau_livre->annee);
+    printf("entrez le titre du livre : ");
+    fgets(nouveau_livre->titre, 100, stdin); 
+    printf("entrez l auteur : ");
+    fgets(nouveau_livre->auteur, 100, stdin);
+    printf("entrez l annee : ");
+    fgets(nouveau_livre->annee, 100, stdin);
     nouveau_livre->suivant = NULL;
     nouveau_livre->precedent = NULL;
     return nouveau_livre;
 }
-
-// 2. Créer un livre avec des données fournies
+// Fonction pour créer un nouveau livre avec des données spécifiques
 Livre* creer_livre_donnees(const char titre[], const char auteur[], int annee) {
     Livre* nouveau_livre = (Livre*)malloc(sizeof(Livre));
-    int i = 0;
-    while (titre[i] != '\0') {
-        nouveau_livre->titre[i] = titre[i];
-        i++;
-    }
-    nouveau_livre->titre[i] = '\0'; 
-    i = 0;
-    while (auteur[i] != '\0') {
-        nouveau_livre->auteur[i] = auteur[i];
-        i++;
-    }
-    nouveau_livre->auteur[i] = '\0'; 
-
+  if (nouveau_livre == NULL) {
+    return NULL;
+  }
+    strcpy(nouveau_livre->titre, titre);
+    strcpy(nouveau_livre->auteur, auteur);
     nouveau_livre->annee = annee;
     nouveau_livre->suivant = NULL;
     nouveau_livre->precedent = NULL;
     return nouveau_livre;
 }
-
-// 3. Retourner la longueur de la liste
+// Fonction pour libérer la mémoire d'un livre
 int longueur_liste(Livre* tete) {
     int longueur = 0;
-    Livre* temp = tete;
-    while (temp != NULL) {
+    Livre* courant = tete;
+    while (courant != NULL) {
         longueur++;
-        temp = temp->suivant;
+        courant = courant->suivant;
     }
     return longueur;
 }
-
-// 4. Insérer un livre à une position donnée
+// Fonction pour libérer la mémoire d'une liste de livres
 Livre* inserer_a_position(Livre* tete, Livre* nouveau_livre, int position) {
-    if (position == 1) {
+    if (position < 0) {
+        return tete;
+    }
+    if (position == 0) {
         nouveau_livre->suivant = tete;
-        if (tete != NULL) tete->precedent = nouveau_livre;
+        if (tete != NULL) {
+            tete->precedent = nouveau_livre;
+        }
         return nouveau_livre;
     }
-
-    Livre* temp = tete;
-    for (int i = 1; temp != NULL && i < position - 1; i++) {
-        temp = temp->suivant;
+    Livre* courant = tete;
+    int i = 0;
+    while (i < position - 1 && courant != NULL) {
+        courant = courant->suivant;
+        i++;
     }
-
-    if (temp != NULL) {
-        nouveau_livre->suivant = temp->suivant;
-        if (temp->suivant != NULL) temp->suivant->precedent = nouveau_livre;
-        temp->suivant = nouveau_livre;
-        nouveau_livre->precedent = temp;
+    if (courant == NULL) {
+        return tete;
     }
+    nouveau_livre->suivant = courant->suivant;
+    if (courant->suivant != NULL) {
+        courant->suivant->precedent = nouveau_livre;
+    }
+    courant->suivant = nouveau_livre;
+    nouveau_livre->precedent = courant;
     return tete;
 }
-
-// 5. Supprimer un livre à une position donnée
+// Fonction pour supprimer un livre à une position donnée
 Livre* supprimer_a_position(Livre* tete, int position) {
-    if (tete == NULL) return NULL;
-
-    if (position == 1) {
-        Livre* nouvelle_tete = tete->suivant;
-        if (nouvelle_tete != NULL) nouvelle_tete->precedent = NULL;
+    if (position < 0) {
+        return tete;
+    }
+    if (position == 0) {
+        Livre* suivant = tete->suivant;
         free(tete);
-        return nouvelle_tete;
+        if (suivant != NULL) {
+            suivant->precedent = NULL;
+        }
+        return suivant;
     }
-
-    Livre* temp = tete;
-    for (int i = 1; temp != NULL && i < position; i++) {
-        temp = temp->suivant;
+    Livre* courant = tete;
+    int i = 0;
+    while (i < position - 1 && courant != NULL) {
+        courant = courant->suivant;
+        i++;
     }
-
-    if (temp != NULL) {
-        if (temp->precedent != NULL) temp->precedent->suivant = temp->suivant;
-        if (temp->suivant != NULL) temp->suivant->precedent = temp->precedent;
-        free(temp);
+    if (courant == NULL || courant->suivant == NULL) {
+        return tete;
     }
+    Livre* a_supprimer = courant->suivant;
+    courant->suivant = a_supprimer->suivant;
+    if (a_supprimer->suivant != NULL) {
+        a_supprimer->suivant->precedent = courant;
+    }
+    free(a_supprimer);
     return tete;
 }
-
-// 6. Supprimer tous les livres publiés une année donnée
+// Fonction pour supprimer tous les livres d'une année donnée
 Livre* supprimer_tous_livres_par_annee(Livre* tete, int annee) {
     Livre* courant = tete;
     while (courant != NULL) {
-        Livre* suivant = courant->suivant;
         if (courant->annee == annee) {
-            if (courant->precedent != NULL) courant->precedent->suivant = courant->suivant;
-            if (courant->suivant != NULL) courant->suivant->precedent = courant->precedent;
-            if (courant == tete) tete = courant->suivant;
-            free(courant);
+            Livre* a_supprimer = courant;
+            if (courant->precedent != NULL) {
+                courant->precedent->suivant = courant->suivant;
+            }
+            if (courant->suivant != NULL) {
+                courant->suivant->precedent = courant->precedent;
+            }
+            courant = courant->suivant;
+            free(a_supprimer);
+        } else {
+            courant = courant->suivant;
         }
-        courant = suivant;
     }
     return tete;
 }
-
-// 7. Afficher la liste dans l'ordre
+// Fonction pour afficher la liste des livres dans l'ordre avant
 void afficher_liste_avant(Livre* tete) {
-    Livre* temp = tete;
-    while (temp != NULL) {
-        printf("Titre : %s, Auteur : %s, Année : %d\n", temp->titre, temp->auteur, temp->annee);
-        temp = temp->suivant;
+    Livre* courant = tete;
+    while (courant != NULL) {
+        printf("%s, %s, %d\n", courant->titre, courant->auteur, courant->annee);
+        courant = courant->suivant;
     }
 }
-
-// 8. Afficher la liste dans l'ordre inverse
+// Fonction pour afficher la liste des livres dans l'ordre arrière
 void afficher_liste_arriere(Livre* tete) {
-    if (tete == NULL) return;
-    Livre* temp = tete;
-    while (temp->suivant != NULL) temp = temp->suivant; 
-    while (temp != NULL) {
-        printf("Titre : %s, Auteur : %s, Année : %d\n", temp->titre, temp->auteur, temp->annee);
-        temp = temp->precedent;
+    Livre* courant = tete;
+    while (courant != NULL) {
+        courant = courant->suivant;
+    }
+    while (courant != NULL) {
+        printf("%s, %s, %d\n", courant->titre, courant->auteur, courant->annee);
+        courant = courant->precedent;
     }
 }
-
-// 9. Rechercher un livre par titre
-Livre* rechercher_livre_par_titre(Livre* tete, const char titre[]) {
-    Livre* temp = tete;
-    while (temp != NULL) {
-        int i = 0;
-        while (temp->titre[i] != '\0' && titre[i] != '\0' && temp->titre[i] == titre[i]) {
-            i++;
+// Fonction pour rechercher un livre par titre
+Livre* rechercher_livre_par_titre(Livre* tete, char titre[]) {
+    Livre* courant = tete;
+    while (courant != NULL) {
+        if (strcmp(courant->titre, titre) == 0) {
+            return courant;
         }
-        if (temp->titre[i] == '\0' && titre[i] == '\0') return temp; // Les chaînes sont égales
-        temp = temp->suivant;
+        courant = courant->suivant;
     }
     return NULL;
 }
-
-// 10. Vérifier si la liste est un palindrome
-int est_liste_palindrome(Livre* tete) {
-    if (tete == NULL) return 1;
+// Fonction pour vérifier si la liste est un palindrome
+int est_liste_palindrome(Livre* tete) { 
     Livre* debut = tete;
     Livre* fin = tete;
-    while (fin->suivant != NULL) fin = fin->suivant; 
-
+    while (debut->suivant != NULL) {
+        debut = debut->suivant;
+    }
     while (debut != fin && debut->precedent != fin) {
-        int i = 0;
-        while (debut->titre[i] != '\0' && fin->titre[i] != '\0' && debut->titre[i] == fin->titre[i]) {
-            i++;
+        if (strcmp(debut->titre, fin->titre) != 0) {
         }
-        if (debut->titre[i] != '\0' || fin->titre[i] != '\0') return 0; // Pas égal
         debut = debut->suivant;
         fin = fin->precedent;
     }
-    return 1;
-}
-
-// 11. Inverser la liste
-Livre* inverser_liste(Livre* tete) {
-    Livre* temp = NULL;
-    Livre* courant = tete;
-    while (courant != NULL) {
-        temp = courant->precedent;
-        courant->precedent = courant->suivant;
-        courant->suivant = temp;
-        courant = courant->precedent;
-    }
-    if (temp != NULL) tete = temp->precedent;
     return tete;
 }
-
-// 12. Fusionner deux listes
-Livre* fusionner_listes(Livre* liste1, Livre* liste2) {
-    if (liste1 == NULL) return liste2;
-    Livre* temp = liste1;
-    while (temp->suivant != NULL) temp = temp->suivant;
-    temp->suivant = liste2;
-    if (liste2 != NULL) liste2->precedent = temp;
-    return liste1;
+// Fonction pour inverser la liste
+Livre* inverser_liste(Livre* tete) {
+    Livre* courant = tete;
+    Livre* precedent = NULL;
+    while (courant != NULL) {
+        Livre* suivant = courant->suivant;
+        courant->suivant = precedent;
+        courant->precedent = suivant;
+        precedent = courant;
+        courant = suivant;
+    }
+    return precedent;
 }
-
-// 13. Insérer dans une liste triée (année croissante)
+// Fonction pour fusionner deux listes
+Livre* fusionner_listes(Livre* liste1, Livre* liste2) {
+    if (liste1 == NULL) {
+        return liste2;
+    }
+    if (liste2 == NULL) {
+        return liste1;
+    }
+    Livre* tete = liste1;
+    Livre* courant = liste1;
+    while (courant->suivant != NULL) {
+        courant = courant->suivant;
+    }
+    courant->suivant = liste2;
+    liste2->precedent = courant;
+    return tete;
+}
+// Fonction pour trier la liste par titre
 Livre* inserer_trie(Livre* tete, Livre* nouveau_livre) {
-    if (tete == NULL || nouveau_livre->annee < tete->annee) {
+    if (tete == NULL || strcmp(nouveau_livre->titre, tete->titre) < 0) {
         nouveau_livre->suivant = tete;
-        if (tete != NULL) tete->precedent = nouveau_livre;
+        if (tete != NULL) {
+            tete->precedent = nouveau_livre;
+        }
         return nouveau_livre;
     }
-
-    Livre* temp = tete;
-    while (temp->suivant != NULL && temp->suivant->annee < nouveau_livre->annee) {
-        temp = temp->suivant;
+    Livre* courant = tete;
+    while (courant->suivant != NULL && strcmp(nouveau_livre->titre, courant->suivant->titre) > 0) {
+        courant = courant->suivant;
     }
-
-    nouveau_livre->suivant = temp->suivant;
-    if (temp->suivant != NULL) temp->suivant->precedent = nouveau_livre;
-    temp->suivant = nouveau_livre;
-    nouveau_livre->precedent = temp;
+    nouveau_livre->suivant = courant->suivant;
+    if (courant->suivant != NULL) {
+        courant->suivant->precedent = nouveau_livre;
+    }
+    courant->suivant = nouveau_livre;
+    nouveau_livre->precedent = courant;
     return tete;
 }
-
-// 14. Supprimer les doublons (même titre et auteur)
+// Fonction pour supprimer les doublons dans la liste
 void supprimer_doublons(Livre* tete) {
     Livre* courant = tete;
     while (courant != NULL) {
-        Livre* coureur = courant->suivant;
-        while (coureur != NULL) {
-            Livre* suivant = coureur->suivant;
-            int titre_match = 1;
-            int auteur_match = 1;
-            int i = 0;
-            while (courant->titre[i] != '\0' && coureur->titre[i] != '\0' && courant->titre[i] == coureur->titre[i]) {
-                i++;
+        Livre* suivant = courant->suivant;
+        while (suivant != NULL) {
+            if (strcmp(courant->titre, suivant->titre) == 0) {
+                Livre* a_supprimer = suivant;
+                courant->suivant = suivant->suivant;
+                if (suivant->suivant != NULL) {
+                    suivant->suivant->precedent = courant;
+                }
+                free(a_supprimer);
+            } else {
+                suivant = suivant->suivant;
             }
-            if (courant->titre[i] != '\0' || coureur->titre[i] != '\0') titre_match = 0;
-
-            i = 0;
-            while (courant->auteur[i] != '\0' && coureur->auteur[i] != '\0' && courant->auteur[i] == coureur->auteur[i]) {
-                i++;
-            }
-            if (courant->auteur[i] != '\0' || coureur->auteur[i] != '\0') auteur_match = 0;
-
-            if (titre_match && auteur_match) {
-                if (coureur->precedent != NULL) coureur->precedent->suivant = coureur->suivant;
-                if (coureur->suivant != NULL) coureur->suivant->precedent = coureur->precedent;
-                free(coureur);
-            }
-            coureur = suivant;
         }
         courant = courant->suivant;
     }
 }
-
 // Fonction principale
 int main() {
-    Livre* bibliotheque = NULL;
-    Livre* livre1 = creer_livre_donnees("LivreA", "AuteurX", 2000);
-    Livre* livre2 = creer_livre_donnees("LivreB", "AuteurY", 2010);
-    bibliotheque = inserer_trie(bibliotheque, livre1);
-    bibliotheque = inserer_trie(bibliotheque, livre2);
+    Livre* tete = NULL;
+    int choix;
 
-    printf("Livres dans l'ordre :\n");
-    afficher_liste_avant(bibliotheque);
+    do {
+        printf("Menu de gestion des livres :\n");
+        printf("1. Ajouter un livre\n");
+        printf("2. Afficher la liste des livres (avant)\n");
+        printf("3. Afficher la liste des livres (arrière)\n");
+        printf("4. Supprimer un livre par position\n");
+        printf("5. Supprimer tous les livres d'une année donnée\n");
+        printf("6. Rechercher un livre par titre\n");
+        printf("7. Supprimer les doublons\n");
+        printf("8. Quitter\n");
+        printf("Entrez votre choix : ");
+        scanf("%d", &choix);
+        getchar(); 
 
-    printf("\nLivres dans l'ordre inverse :\n");
-    afficher_liste_arriere(bibliotheque);
+        switch (choix) {
+            case 1: {
+                char titre[100], auteur[100];
+                int annee;
+                printf("Entrez le titre : ");
+                fgets(titre, 100, stdin);
+                titre[strcspn(titre, "\n")] = '\0'; 
+                printf("Entrez l'auteur : ");
+                fgets(auteur, 100, stdin);
+                auteur[strcspn(auteur, "\n")] = '\0'; // '
+                printf("Entrez l'année : ");
+                scanf("%d", &annee);
+                getchar(); 
+                Livre* nouveau_livre = creer_livre_donnees(titre, auteur, annee);
+                tete = inserer_trie(tete, nouveau_livre);
+                break;
+            }
+            case 2:
+                printf("Liste des livres (avant) :\n");
+                afficher_liste_avant(tete);
+                break;
+            case 3:
+                printf("Liste des livres (arriere) :\n");
+                afficher_liste_arriere(tete);
+                break;
+            case 4: {
+                int position;
+                printf("Entrez la position a supprimer : ");
+                scanf("%d", &position);
+                getchar(); 
+                tete = supprimer_a_position(tete, position);
+                break;
+            }
+            case 5: {
+                int annee;
+                printf("Entrez l annee a supprimer : ");
+                scanf("%d", &annee);
+                getchar(); 
+                tete = supprimer_tous_livres_par_annee(tete, annee);
+                break;
+            }
+            case 6: {
+                char titre[100];
+                printf("Entrez le titre à rechercher : ");
+                fgets(titre, 100, stdin);
+                titre[strcspn(titre, "\n")] = '\0'; 
+                Livre* resultat = rechercher_livre_par_titre(tete, titre);
+                if (resultat != NULL) {
+                    printf("Livre trouvé : %s, %s, %d\n", resultat->titre, resultat->auteur, resultat->annee);
+                } else {
+                    printf("Livre non trouvé.\n");
+                }
+                break;
+            }
+            case 7:
+                supprimer_doublons(tete);
+                printf("Doublons supprimes.\n");
+                break;
+            case 8:
+                printf("Au revoir !\n");
+                break;
+            default:
+                printf("Choix invalide. Veuillez reessayer.\n");
+        }
+    } while (choix != 8);
+
+    while (tete != NULL) {
+        tete = supprimer_a_position(tete, 0);
+    }
 
     return 0;
 }

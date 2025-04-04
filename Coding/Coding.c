@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-// Structure to represent a book
 typedef struct Book {
     char title[100];
     char author[100];
@@ -10,239 +10,246 @@ typedef struct Book {
     struct Book* prev;
 } Book;
 
-// 1. Create a book by asking the user for information
+// Function to create a new book with user input
 Book* create_book() {
     Book* new_book = (Book*)malloc(sizeof(Book));
-    printf("Enter book title: ");
-    scanf("%99s", new_book->title); 
-    printf("Enter author: ");
-    scanf("%99s", new_book->author); 
-    printf("Enter year: ");
+    printf("Enter the book title: ");
+    fgets(new_book->title, 100, stdin); 
+    printf("Enter the author: ");
+    fgets(new_book->author, 100, stdin);
+    printf("Enter the year: ");
     scanf("%d", &new_book->year);
+    getchar(); // Clear the newline character
     new_book->next = NULL;
     new_book->prev = NULL;
     return new_book;
 }
 
-// 2. Create a book with provided data
+// Function to create a new book with specific data
 Book* create_book_data(const char title[], const char author[], int year) {
     Book* new_book = (Book*)malloc(sizeof(Book));
-    int i = 0;
-    while (title[i] != '\0') {
-        new_book->title[i] = title[i];
-        i++;
+    if (new_book == NULL) {
+        return NULL;
     }
-    new_book->title[i] = '\0'; 
-    i = 0;
-    while (author[i] != '\0') {
-        new_book->author[i] = author[i];
-        i++;
-    }
-    new_book->author[i] = '\0'; 
-
+    strcpy(new_book->title, title);
+    strcpy(new_book->author, author);
     new_book->year = year;
     new_book->next = NULL;
     new_book->prev = NULL;
     return new_book;
 }
 
-// 3. Return the length of the list
+// Function to get the length of the list
 int list_length(Book* head) {
     int length = 0;
-    Book* temp = head;
-    while (temp != NULL) {
+    Book* current = head;
+    while (current != NULL) {
         length++;
-        temp = temp->next;
+        current = current->next;
     }
     return length;
 }
 
-// 4. Insert a book at a given position
+// Function to insert a book at a specific position
 Book* insert_at_position(Book* head, Book* new_book, int position) {
-    if (position == 1) {
+    if (position < 0) {
+        return head;
+    }
+    if (position == 0) {
         new_book->next = head;
-        if (head != NULL) head->prev = new_book;
+        if (head != NULL) {
+            head->prev = new_book;
+        }
         return new_book;
     }
-
-    Book* temp = head;
-    for (int i = 1; temp != NULL && i < position - 1; i++) {
-        temp = temp->next;
+    Book* current = head;
+    int i = 0;
+    while (i < position - 1 && current != NULL) {
+        current = current->next;
+        i++;
     }
-
-    if (temp != NULL) {
-        new_book->next = temp->next;
-        if (temp->next != NULL) temp->next->prev = new_book;
-        temp->next = new_book;
-        new_book->prev = temp;
+    if (current == NULL) {
+        return head;
     }
+    new_book->next = current->next;
+    if (current->next != NULL) {
+        current->next->prev = new_book;
+    }
+    current->next = new_book;
+    new_book->prev = current;
     return head;
 }
 
-// 5. Delete a book at a given position
+// Function to delete a book at a specific position
 Book* delete_at_position(Book* head, int position) {
-    if (head == NULL) return NULL;
-
-    if (position == 1) {
-        Book* new_head = head->next;
-        if (new_head != NULL) new_head->prev = NULL;
+    if (position < 0) {
+        return head;
+    }
+    if (position == 0) {
+        Book* next = head->next;
         free(head);
-        return new_head;
+        if (next != NULL) {
+            next->prev = NULL;
+        }
+        return next;
     }
-
-    Book* temp = head;
-    for (int i = 1; temp != NULL && i < position; i++) {
-        temp = temp->next;
+    Book* current = head;
+    int i = 0;
+    while (i < position - 1 && current != NULL) {
+        current = current->next;
+        i++;
     }
-
-    if (temp != NULL) {
-        if (temp->prev != NULL) temp->prev->next = temp->next;
-        if (temp->next != NULL) temp->next->prev = temp->prev;
-        free(temp);
+    if (current == NULL || current->next == NULL) {
+        return head;
     }
+    Book* to_delete = current->next;
+    current->next = to_delete->next;
+    if (to_delete->next != NULL) {
+        to_delete->next->prev = current;
+    }
+    free(to_delete);
     return head;
 }
 
-// 6. Delete all books published in a given year
+// Function to delete all books from a specific year
 Book* delete_all_books_by_year(Book* head, int year) {
     Book* current = head;
     while (current != NULL) {
-        Book* next = current->next;
         if (current->year == year) {
-            if (current->prev != NULL) current->prev->next = current->next;
-            if (current->next != NULL) current->next->prev = current->prev;
-            if (current == head) head = current->next;
-            free(current);
+            Book* to_delete = current;
+            if (current->prev != NULL) {
+                current->prev->next = current->next;
+            }
+            if (current->next != NULL) {
+                current->next->prev = current->prev;
+            }
+            current = current->next;
+            free(to_delete);
+        } else {
+            current = current->next;
         }
-        current = next;
     }
     return head;
 }
 
-// 7. Display the list in forward order
+// Function to display the list in forward order
 void display_list_forward(Book* head) {
-    Book* temp = head;
-    while (temp != NULL) {
-        printf("Title: %s, Author: %s, Year: %d\n", temp->title, temp->author, temp->year);
-        temp = temp->next;
+    Book* current = head;
+    while (current != NULL) {
+        printf("%s, %s, %d\n", current->title, current->author, current->year);
+        current = current->next;
     }
 }
 
-// 8. Display the list in reverse order
+// Function to display the list in backward order
 void display_list_backward(Book* head) {
-    if (head == NULL) return;
-    Book* temp = head;
-    while (temp->next != NULL) temp = temp->next; 
-    while (temp != NULL) {
-        printf("Title: %s, Author: %s, Year: %d\n", temp->title, temp->author, temp->year);
-        temp = temp->prev;
+    Book* current = head;
+    if (current == NULL) return;
+    while (current->next != NULL) {
+        current = current->next;
+    }
+    while (current != NULL) {
+        printf("%s, %s, %d\n", current->title, current->author, current->year);
+        current = current->prev;
     }
 }
 
-// 9. Search for a book by title
-Book* search_book_by_title(Book* head, const char title[]) {
-    Book* temp = head;
-    while (temp != NULL) {
-        int i = 0;
-        while (temp->title[i] != '\0' && title[i] != '\0' && temp->title[i] == title[i]) {
-            i++;
+// Function to search for a book by title
+Book* search_book_by_title(Book* head, char title[]) {
+    Book* current = head;
+    while (current != NULL) {
+        if (strcmp(current->title, title) == 0) {
+            return current;
         }
-        if (temp->title[i] == '\0' && title[i] == '\0') return temp; // Strings are equal
-        temp = temp->next;
+        current = current->next;
     }
     return NULL;
 }
 
-// 10. Check if the list is a palindrome
+// Function to check if the list is a palindrome
 int is_palindrome_list(Book* head) {
     if (head == NULL) return 1;
     Book* start = head;
     Book* end = head;
-    while (end->next != NULL) end = end->next; 
-
+    while (end->next != NULL) {
+        end = end->next;
+    }
     while (start != end && start->prev != end) {
-        int i = 0;
-        while (start->title[i] != '\0' && end->title[i] != '\0' && start->title[i] == end->title[i]) {
-            i++;
+        if (strcmp(start->title, end->title) != 0) {
+            return 0;
         }
-        if (start->title[i] != '\0' || end->title[i] != '\0') return 0; // Not equal
         start = start->next;
         end = end->prev;
     }
     return 1;
 }
 
-// 11. Reverse the list
+// Function to reverse the list
 Book* reverse_list(Book* head) {
-    Book* temp = NULL;
     Book* current = head;
+    Book* prev = NULL;
     while (current != NULL) {
-        temp = current->prev;
-        current->prev = current->next;
-        current->next = temp;
-        current = current->prev;
+        Book* next = current->next;
+        current->next = prev;
+        current->prev = next;
+        prev = current;
+        current = next;
     }
-    if (temp != NULL) head = temp->prev;
+    return prev;
+}
+
+// Function to merge two lists
+Book* merge_lists(Book* list1, Book* list2) {
+    if (list1 == NULL) return list2;
+    if (list2 == NULL) return list1;
+    Book* head = list1;
+    Book* current = list1;
+    while (current->next != NULL) {
+        current = current->next;
+    }
+    current->next = list2;
+    list2->prev = current;
     return head;
 }
 
-// 12. Merge two lists
-Book* merge_lists(Book* list1, Book* list2) {
-    if (list1 == NULL) return list2;
-    Book* temp = list1;
-    while (temp->next != NULL) temp = temp->next;
-    temp->next = list2;
-    if (list2 != NULL) list2->prev = temp;
-    return list1;
-}
-
-// 13. Insert into a sorted list (ascending year)
+// Function to insert a book in a sorted list (by year)
 Book* insert_sorted(Book* head, Book* new_book) {
     if (head == NULL || new_book->year < head->year) {
         new_book->next = head;
-        if (head != NULL) head->prev = new_book;
+        if (head != NULL) {
+            head->prev = new_book;
+        }
         return new_book;
     }
-
-    Book* temp = head;
-    while (temp->next != NULL && temp->next->year < new_book->year) {
-        temp = temp->next;
+    Book* current = head;
+    while (current->next != NULL && new_book->year > current->next->year) {
+        current = current->next;
     }
-
-    new_book->next = temp->next;
-    if (temp->next != NULL) temp->next->prev = new_book;
-    temp->next = new_book;
-    new_book->prev = temp;
+    new_book->next = current->next;
+    if (current->next != NULL) {
+        current->next->prev = new_book;
+    }
+    current->next = new_book;
+    new_book->prev = current;
     return head;
 }
 
-// 14. Remove duplicates (same title and author)
+// Function to remove duplicate books
 void remove_duplicates(Book* head) {
     Book* current = head;
     while (current != NULL) {
-        Book* runner = current->next;
-        while (runner != NULL) {
-            Book* next = runner->next;
-            int title_match = 1;
-            int author_match = 1;
-            int i = 0;
-            while (current->title[i] != '\0' && runner->title[i] != '\0' && current->title[i] == runner->title[i]) {
-                i++;
+        Book* next = current->next;
+        while (next != NULL) {
+            if (strcmp(current->title, next->title) == 0 && strcmp(current->author, next->author) == 0) {
+                Book* to_delete = next;
+                current->next = next->next;
+                if (next->next != NULL) {
+                    next->next->prev = current;
+                }
+                free(to_delete);
+            } else {
+                next = next->next;
             }
-            if (current->title[i] != '\0' || runner->title[i] != '\0') title_match = 0;
-
-            i = 0;
-            while (current->author[i] != '\0' && runner->author[i] != '\0' && current->author[i] == runner->author[i]) {
-                i++;
-            }
-            if (current->author[i] != '\0' || runner->author[i] != '\0') author_match = 0;
-
-            if (title_match && author_match) {
-                if (runner->prev != NULL) runner->prev->next = runner->next;
-                if (runner->next != NULL) runner->next->prev = runner->prev;
-                free(runner);
-            }
-            runner = next;
         }
         current = current->next;
     }
@@ -250,17 +257,92 @@ void remove_duplicates(Book* head) {
 
 // Main function
 int main() {
-    Book* library = NULL;
-    Book* book1 = create_book_data("BookA", "AuthorX", 2000);
-    Book* book2 = create_book_data("BookB", "AuthorY", 2010);
-    library = insert_sorted(library, book1);
-    library = insert_sorted(library, book2);
+    Book* head = NULL;
+    int choice;
 
-    printf("Books in forward order:\n");
-    display_list_forward(library);
+    do {
+        printf("Book Management Menu:\n");
+        printf("1. Add a book\n");
+        printf("2. Display the list (forward)\n");
+        printf("3. Display the list (backward)\n");
+        printf("4. Delete a book by position\n");
+        printf("5. Delete all books from a given year\n");
+        printf("6. Search for a book by title\n");
+        printf("7. Remove duplicates\n");
+        printf("8. Exit\n");
+        printf("Enter your choice: ");
+        scanf("%d", &choice);
+        getchar(); 
 
-    printf("\nBooks in backward order:\n");
-    display_list_backward(library);
+        switch (choice) {
+            case 1: {
+                char title[100], author[100];
+                int year;
+                printf("Enter the title: ");
+                fgets(title, 100, stdin);
+                title[strcspn(title, "\n")] = '\0';
+                printf("Enter the author: ");
+                fgets(author, 100, stdin);
+                author[strcspn(author, "\n")] = '\0';
+                printf("Enter the year: ");
+                scanf("%d", &year);
+                getchar();
+                Book* new_book = create_book_data(title, author, year);
+                head = insert_sorted(head, new_book);
+                break;
+            }
+            case 2:
+                printf("Book list (forward):\n");
+                display_list_forward(head);
+                break;
+            case 3:
+                printf("Book list (backward):\n");
+                display_list_backward(head);
+                break;
+            case 4: {
+                int position;
+                printf("Enter the position to delete: ");
+                scanf("%d", &position);
+                getchar();
+                head = delete_at_position(head, position);
+                break;
+            }
+            case 5: {
+                int year;
+                printf("Enter the year to delete: ");
+                scanf("%d", &year);
+                getchar();
+                head = delete_all_books_by_year(head, year);
+                break;
+            }
+            case 6: {
+                char title[100];
+                printf("Enter the title to search: ");
+                fgets(title, 100, stdin);
+                title[strcspn(title, "\n")] = '\0';
+                Book* result = search_book_by_title(head, title);
+                if (result != NULL) {
+                    printf("Book found: %s, %s, %d\n", result->title, result->author, result->year);
+                } else {
+                    printf("Book not found.\n");
+                }
+                break;
+            }
+            case 7:
+                remove_duplicates(head);
+                printf("Duplicates removed.\n");
+                break;
+            case 8:
+                printf("Goodbye!\n");
+                break;
+            default:
+                printf("Invalid choice. Please try again.\n");
+        }
+    } while (choice != 8);
+
+    while (head != NULL) {
+        head = delete_at_position(head, 0);
+    }
 
     return 0;
 }
